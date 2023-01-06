@@ -31,7 +31,7 @@ def showDataBase():
 def columnManip(tableName, columnName, inputNum):
     # If user inputs 1, add a new column with a name of their choice
     if inputNum == '1':
-      addC = "ALTER TABLE {} ADD {} varchar"
+      addC = "ALTER TABLE {} ADD {} VARCHAR(255)"
       mycursor.execute(addC.format(tableName, columnName))
       print("Change committed")
       mydb.commit()
@@ -43,7 +43,7 @@ def columnManip(tableName, columnName, inputNum):
       mydb.commit()
     # If user inputs anything else other than 1 or 2, modify the column based on the name
     else:
-      modC = "ALTER TABLE {} MODIFY COLUMN {} varchar"
+      modC = "ALTER TABLE {} MODIFY COLUMN {} VARCHAR(255)"
       mycursor.execute(modC.format(tableName, columnName))
       print("Change committed")
       mydb.commit()
@@ -92,9 +92,13 @@ def update(tableName, columnValue, changeValue, columnName, whereCondition):
 def showDBTables(dbName):
   # accepts the desired database name 
   tables = "SHOW TABLES IN {}"
-  mycursor.execute(tables.format(dbName))
+  try:
+     mycursor.execute(tables.format(dbName))
+     mydb.commit()
+  except:
+    print("Table preview unavailable, no tables currently exist in the DB")
   print("Change committed")
-  mydb.commit()
+  
 
 def showFromTable(tableName):
     table = "SELECT * FROM {}"
@@ -120,7 +124,7 @@ while t:
 
 
     # checking input from user to see if they want to create/delete a database or open an existing one
-    if dbChoice == '1':
+    while dbChoice == '1':
       # showing pre-existing list of databases
       print("You choose that you would like to open an existing database please wait...")
       
@@ -130,6 +134,71 @@ while t:
       print("Please list the database your table is located in:")
       dbChosen = input("Selected database: ")
       
+      useDB = "USE {}"
+      mycursor.execute(useDB.format(dbChosen))
+
+      # OPTIONS FOR ACCESSING / CREATING TABLE
+
+      tableLoop = True
+      while tableLoop == True:
+        print("Type 1 if you have an existing table you would like to access")
+        print("Type 2 if you would like to create a table")
+        print("Type 3 if you would like to delete a table")
+        print("Type 4 if you would like to return")
+        tableChoice = input()
+        
+        # if user has a table already made, they can go on to modify it
+        if tableChoice == '1':
+          tableLoop = False
+        
+        elif tableChoice == '2':
+          # TO DO USER SHOULD BE ABLE TO CHOOSE 
+          print("Input the name of the table")
+          newTN = input()
+          print("Enter first column name")
+          firstC = input()
+          print("Enter second column name")
+          secondC = input()
+          
+          createTableScript = "CREATE TABLE {} ({} VARCHAR(255), {} VARCHAR(255))"
+          mycursor.execute(createTableScript.format(newTN, firstC, secondC))
+
+          tableLoop = False
+          
+        elif tableChoice == '3':
+          print("Enter the name of the table you would like to delete")
+          tableName = input()
+
+          deleteTableScript = "DROP TABLE {}"
+          mycursor.execute(deleteTableScript.format(tableName))  
+
+          tableLoop = False
+        elif tableChoice == '4':  
+            dbChoice = '0'
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       # prompts user for desired table, sends to table modification loop
       showDBTables(dbChosen)
       print("Please state the table you would like to access:")
@@ -218,7 +287,7 @@ while t:
           print("Type the column you would like to manipulate")
           colNum = input()
 
-          # Getting the user input 
+          # Getting the user input
           print("Type 1 to add column to table")
           print("Type 2 to remove column from table")
           print("Type 3 to change a column name")
@@ -236,7 +305,7 @@ while t:
           tableModLoop = False
  
     ##if user picks 2, ask if user wants to create or delete a database, get user input
-    elif dbChoice == '2':
+    while dbChoice == '2':
       print("Type 1 to create a database")
       print("Type 2 to delete a database")
       dbAlter = input("Type here: ")
@@ -257,7 +326,7 @@ while t:
         
         userEnd=input("Do you want to continue or end program(1 to continue or 2 to end): ")
         if userEnd=='1':
-          continue
+          dbChoice='0'
         elif userEnd=='2':
           t=False
 
@@ -274,11 +343,11 @@ while t:
           
           userEnd=input("Do you want to continue or end program(1 to continue or 2 to end): ")
           if userEnd=='1':
-            continue
+            dbChoice='0'
           elif userEnd=='2':
             t=False
     ## Triggers boolean to exit main program loop if user chooses to exit program   
-    elif dbChoice == '3':
+    while dbChoice == '3':
       t = False
 
 
