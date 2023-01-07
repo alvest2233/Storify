@@ -1,4 +1,7 @@
+#from 3b1wDBclasses import * 
+# # TO FIX: separate function file
 import mysql.connector
+from prettytable import PrettyTable
 
 mydb = mysql.connector.connect(
   host="localhost",
@@ -6,7 +9,7 @@ mydb = mysql.connector.connect(
   password="password"
 )
 
-mycursor = mydb.cursor()
+mycursor = mydb.cursor(buffered=True)
 t = True
 # Function to show the database
 def showDataBase():
@@ -48,12 +51,31 @@ def columnManip(tableName, columnName, inputNum):
       print("Change committed")
       mydb.commit()
 
+def numCol(DBName, tableName):
+    numC = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = '{}' AND table_name = '{}'"
+    mycursor.execute(numC.format(DBName, tableName))
+    col = mycursor.fetchall()
+    mydb.commit()
+    for x in col:
+      return x
+
+def colName(tableName):
+    cName = "SELECT * FROM INFORMATION_SCHEMA.COLUMNS where table_name = '{}'"
+    mycursor.execute(cName.format(tableName))
+    col = mycursor.fetchall()
+    mydb.commit()
+    return col
+
 def addRow(tableName, rowName, listOfValues):
     # UNTESTED CODE
-    row = "INSERT INTO {} ({}) VALUES ({})"
-
-    mycursor.execute(row.format(tableName, rowName, listOfValues))
+    '''row = "INSERT INTO %s (ohm, tiago) VALUES (%s, %s)"
+    values = (tableName, rowName, listOfValues)
+    print(tableName, rowName, listOfValues)
+    print(row.format(tableName, rowName, listOfValues))
+    mycursor.execute(row, values)
     print("Change committed")
+    mydb.commit()'''
+    mycursor.execute("INSERT INTO sridhar (ohm, tiago) VALUES ('value1', 'value2')")
     mydb.commit()
 
 def delRow(tableName, columnName, value):
@@ -89,7 +111,7 @@ def update(tableName, columnValue, changeValue, columnName, whereCondition):
     print("Change committed")
     mydb.commit()
     
-def showDBTables(dbName):
+def showAllDBTables(dbName):
   # accepts the desired database name 
   tables = "SHOW TABLES IN {}"
   try:
@@ -99,15 +121,89 @@ def showDBTables(dbName):
     print("Table preview unavailable, no tables currently exist in the DB")
   print("Change committed")
   
-
+''' ###ORIGINAL###
 def showFromTable(tableName):
     table = "SELECT * FROM {}"
-    mycursor.execute(table.format(tableName))
+    try:
+      mycursor.execute(table.format(tableName))
+      mydb.commit()
+    except:
+      print("Table preview unavailable, no data currently exists in the table")
     print("Change committed")
+'''
+'''###TRY NUMBER 2###
+def showFromTable(tableName):
+  table = "SELECT * FROM {}"
+  mycursor.execute(table.format(tableName))
+  try:
+    rows = mycursor.fetchall()
+    for row in rows:
+      for col in row:
+        print (col, row = ' ')   
+      print()
+  except:
+    print("ERROR : THE TABLE COULD NOT PRINT")
+'''
+
+
+'''
+def showFromTable(tableName):
+  displayDB = PrettyTable()
+  try:
+    showCols = "SHOW COLUMNS FROM {}"
+    cols = mycursor.execute(showCols.format(tableName))
+    print(cols)  
     mydb.commit()
+    displayDB.field_names = [cols]
+    
+    table = "SELECT * FROM {}"
+    mycursor.execute(table.format(tableName))  
+    mydb.commit()
+    results = mycursor.fetchall()
+
+    for x in results:
+      displayDB.add_column(x)  
+    
+    print(displayDB)
+  except:
+    print("ERROR: TABLE COULD NOT PRINT PLEASE TRY AGAIN LATER")
+'''
+
+def showFromTable(tableName):
+    table = "DESCRIBE {}"
+    try:
+      mycursor.execute(table.format(tableName))
+      mydb.commit()
+    except:
+      print("Table preview unavailable, no data currently exists in the table")
+    print("Change committed")
+
+def dropTable(dbChosen, tableName):
+    validTables = "SHOW TABLES IN {}"
+    try:
+      mycursor.execute(validTables.format(dbChosen))
+      mydb.commit()
+
+      tableList = []
+      for x in mycursor:
+        filteredx = str(x)
+        a = filteredx.replace("'", "").replace("(", "").replace(")", "").replace(",", "")
+        tableList.append(a)
+
+      print(tableList)
+      
+      if tableName in tableList:
+        deleteTableScript = "DROP TABLE {}"
+        mycursor.execute(deleteTableScript.format(tableName))
+        mydb.commit()
+        print("Table {} has been dropped".format(tableName))
+      else:
+        print("Table does not exist, and cannot be deleted.")  
+    except:
+      print("There are no valid databases. Please create a DB first")
 
 
-
+  
 #######################AARYA###########################OHM###################NOT#TIAGO####################SRIDHAR#####################################
 
 
@@ -119,7 +215,14 @@ while t:
     print("Type 2 if you would like to create or delete a database")
     print("Type 3 to exit the program")
     #user input
-    dbChoice = input("Type here: ")
+
+    while True:
+      dbChoice = input("Type here: ")
+
+      if dbChoice == '1' or dbChoice == '2' or dbChoice == '3':
+        break
+      else:
+        print("The input entered in incorrect, please type in the right value")
 
 
 
@@ -168,15 +271,15 @@ while t:
         elif tableChoice == '3':
           print("Enter the name of the table you would like to delete")
           tableName = input()
-
-          deleteTableScript = "DROP TABLE {}"
-          mycursor.execute(deleteTableScript.format(tableName))  
+          dropTable(dbChosen, tableName)
 
           tableLoop = False
         elif tableChoice == '4':  
+            break 
             dbChoice = '0'
             
-
+      if tableChoice == '4':
+        break
 
 
 
@@ -200,7 +303,7 @@ while t:
 
 
       # prompts user for desired table, sends to table modification loop
-      showDBTables(dbChosen)
+      showAllDBTables(dbChosen)
       print("Please state the table you would like to access:")
       dbTableName = input("Type table name: ")
       tableModLoop = True
@@ -208,6 +311,15 @@ while t:
       # table modification loop, shows current table, prompts user for change then breaks off into chosen options
       while tableModLoop: 
         showFromTable(dbTableName)
+        numberC = numCol(dbChosen, dbTableName)
+        colNames = colName(dbTableName)
+        colNameList = []
+        i = 0
+        while i < numberC[0]:
+          colNameList.insert(i, colNames[i][3])
+          i = i + 1
+        print(colNameList)
+        
         updateBool = False
         rowBool = False
         columnBool = False
@@ -224,19 +336,22 @@ while t:
           rowBool = True
         elif dbModChoice == '3':
           columnBool = True
+        elif dbModChoice == '4':
+          tableModLoop = False
+          dbChoice = '0'
         
         #################################################################################
         
         # Single cell replacement user prompts, inputs sent to single cell update method
         while updateBool:
-          print("What is the name of the cell value's column?")
+          print("What is the name of the cell's column?")
           cellColumn = input()
-          print("What is the desired cell's value?")
-          cellValue = input()
           print("What is the unique index's column name?")
           cellIndex = input()
           print("What is the unique index number of the cell?")
           cellLocation = input()
+          print("What would you like the new cell value to be?")
+          cellValue = input()
           update(dbTableName,cellColumn,cellValue,cellIndex,cellLocation)
           updateBool = False
 
