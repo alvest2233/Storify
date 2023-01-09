@@ -62,20 +62,37 @@ def colName(tableName):
     mydb.commit()
     return col
 
-def addRow(tableName, rowName, listOfValues):
+def addRow(tableName, numCol, colNames):
     # UNTESTED CODE
-    '''row = "INSERT INTO %s (ohm, tiago) VALUES (%s, %s)"
-    values = (tableName, rowName, listOfValues)
-    print(tableName, rowName, listOfValues)
-    print(row.format(tableName, rowName, listOfValues))
-    mycursor.execute(row, values)
+    columns = "("
+    between = ", "
+    i = 0
+    while i < numCol:
+      columns = "".join([columns, colNames[i]])
+      columns = "".join([columns, between])
+      i = i + 1
+    columns = columns[:-2]
+    columns = "".join([columns, ")"])
+
+    i = 0
+    inputs = []
+    prompt = "Please input the value for the column "
+    while i < numCol:
+        tempVar = "".join([prompt, colNames[i]])
+        print("".join([tempVar, ":"]))
+        answer = input()
+        inputs.insert(i, answer)
+        i = i + 1
+    x = str(inputs)
+    x = x.replace("[", "(").replace("]", ")")
+    
+    test = ("INSERT INTO {} {} VALUES {}")
+    mycursor.execute(test.format(tableName, columns, x))
     print("Change committed")
-    mydb.commit()'''
-    mycursor.execute("INSERT INTO sridhar (ohm, tiago) VALUES ('value1', 'value2')")
     mydb.commit()
 
 def delRow(tableName, columnName, value):
-    dRow = "DELETE FROM {} WHERE {} = {}"
+    dRow = "DELETE FROM {} WHERE {} = '{}'"
     mycursor.execute(dRow.format(tableName, columnName, value))
     mydb.commit()
     print("Row has been removed")
@@ -111,68 +128,83 @@ def showAllDBTables(dbName):
   # accepts the desired database name 
   tables = "SHOW TABLES IN {}"
   try:
-    mycursor.execute(tables.format(dbName))
-    mydb.commit()
+     mycursor.execute(tables.format(dbName))
+     mydb.commit()
   except:
     print("Table preview unavailable, no tables currently exist in the DB")
   print("Change committed")
   
-''' ###ORIGINAL###
-def showFromTable(tableName):
-    table = "SELECT * FROM {}"
-    try:
-      mycursor.execute(table.format(tableName))
-      mydb.commit()
-    except:
-      print("Table preview unavailable, no data currently exists in the table")
-    print("Change committed")
-'''
-'''###TRY NUMBER 2###
-def showFromTable(tableName):
-  table = "SELECT * FROM {}"
-  mycursor.execute(table.format(tableName))
-  try:
-    rows = mycursor.fetchall()
-    for row in rows:
-      for col in row:
-        print (col, row = ' ')   
-      print()
-  except:
-    print("ERROR : THE TABLE COULD NOT PRINT")
-'''
-
-
-'''
-def showFromTable(tableName):
+def showFromTable(columnNameList, tableName):
   displayDB = PrettyTable()
+  
+  displayDB.field_names = columnNameList
+  print("colNameList added!\n")
+
   try:
-    showCols = "SHOW COLUMNS FROM {}"
-    cols = mycursor.execute(showCols.format(tableName))
-    print(cols)  
-    mydb.commit()
-    displayDB.field_names = [cols]
-    
     table = "SELECT * FROM {}"
     mycursor.execute(table.format(tableName))  
-    mydb.commit()
     results = mycursor.fetchall()
+    mydb.commit()
 
     for x in results:
-      displayDB.add_column(x)  
+      displayDB.add_row(x)  
     
     print(displayDB)
+    print ("\n")
   except:
     print("ERROR: TABLE COULD NOT PRINT PLEASE TRY AGAIN LATER")
-'''
 
-def showFromTable(tableName):
-    table = "DESCRIBE {}"
-    try:
-      mycursor.execute(table.format(tableName))
+def createTable():
+  validTables = "SHOW TABLES IN {}"
+  try:
+      mycursor.execute(validTables.format(dbChosen))
       mydb.commit()
+
+      tableList = []
+      for x in mycursor:
+        filteredx = str(x)
+        a = filteredx.replace("'", "").replace("(", "").replace(")", "").replace(",", "")
+        tableList.append(a)
+
+      print(tableList)
+      
+  except:
+      print("There are no valid databases. Please create a DB first")
+      
+
+  print("Input the name of the table. Please use a unique name")
+  newTN = input()
+
+  while newTN not in tableList:
+    print("Enter the number of columns you would like to have")
+    numColumns = input()
+    numColumns = (int)(numColumns)
+    colNames = []
+    createTableScript = "CREATE TABLE {} ("
+    
+    for i in range(numColumns):
+      colPrompt = "Enter name for column {}"
+      index = i + 1
+      print(colPrompt.format(index))
+      temp = input()
+      colNames.append(temp)
+      if i == (numColumns - 1):
+        createTableScript += (colNames[i] + " VARCHAR(255))")
+      else:
+        createTableScript += (colNames[i] + " VARCHAR(255), ")  
+      
+    try:
+      mycursor.execute(createTableScript.format(newTN))
+      mydb.commit()
+      break
     except:
-      print("Table preview unavailable, no data currently exists in the table")
-    print("Change committed")
+      print("ERROR: TABLE UNABLE TO BE CREATED")
+      break
+  print("Table name already in use, and cannot be created")
+  ##print("Input a new name for the table. Please use a unique name")
+  ##newTN = input()  
+
+  ## NO REPROMPT, OHM WILL GET THIS LOOPING BACK TO 1234 MENU INSTEAD OF REPROMPTING
 
 def dropTable(dbChosen, tableName):
     validTables = "SHOW TABLES IN {}"
