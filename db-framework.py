@@ -1,5 +1,4 @@
 #from 3b1wDBclasses import * 
-# # TO FIX: separate function file
 import mysql.connector
 #from functions import *
 from prettytable import PrettyTable
@@ -47,7 +46,7 @@ def columnAdd(tableName, newCol, colNameList):
     
     addC = "ALTER TABLE {} ADD {} VARCHAR(255)"
     mycursor.execute(addC.format(tableName, newCol))
-    print("Change committed")
+    print("\n")
     mydb.commit()
       
     
@@ -93,7 +92,7 @@ def columnChange(tableName, colNameList):
         
     modC = "ALTER TABLE `{}` RENAME COLUMN {} TO {}"
     mycursor.execute(modC.format(tableName, oldCol, newCol))
-    print("Change committed")
+    print("\n")
     mydb.commit()
 
 def columnRemove(tableName, columnName, colNameList):
@@ -115,7 +114,7 @@ def columnRemove(tableName, columnName, colNameList):
 
     dropC = "ALTER TABLE {} DROP COLUMN {}"
     mycursor.execute(dropC.format(tableName, columnName))
-    print("Change committed")
+    print("\n")
     mydb.commit()
 
 def numCol(DBName, tableName):
@@ -166,7 +165,7 @@ def addRow(tableName, numCol, colNames):
     
     test = ("INSERT INTO {} {} VALUES {}")
     mycursor.execute(test.format(tableName, columns, x))
-    print("Change committed")
+    print("\n")
     mydb.commit()
 
 def delRow(tableName, numCol, colNames):
@@ -259,17 +258,18 @@ def findRow(tableName, numCol, colNames):
       except:
         print("The row does not exist. Please try again and make sure the correct information is entered.")
       
-      searchResults = "\nResults found for {} = '{}':"
-      print(searchResults.format(columnName, value)) 
-      displayDB = PrettyTable()
-      displayDB.field_names = colNames
-      try:
-        for x in result:
-          displayDB.add_row(x)  
-        print(displayDB)
-        print ("\n")
-      except:
-        print("ERROR: TABLE COULD NOT PRINT PLEASE TRY AGAIN LATER")
+      if innerTest == True:
+        searchResults = "\nResults found for {} = '{}':"
+        print(searchResults.format(columnName, value)) 
+        displayDB = PrettyTable()
+        displayDB.field_names = colNames
+        try:
+          for x in result:
+            displayDB.add_row(x)  
+          print(displayDB)
+          print ("\n")
+        except:
+          print("ERROR: TABLE COULD NOT PRINT PLEASE TRY AGAIN LATER")
     
 def update(tableName, colNames):
   
@@ -349,7 +349,7 @@ def update(tableName, colNames):
     mydb.commit()
   except:
     print("Input for tableName/columnName/whereCondition do not exist in database")  
-  print("Change committed")  
+  print("\n")  
     
 def showAllDBTables(dbName):
   # checks database if tables exist, prints error message instead of DB table if no tables exist in DB
@@ -373,7 +373,6 @@ def showFromTable(columnNameList, tableName):
   #
   displayDB = PrettyTable()
   displayDB.field_names = columnNameList
-  print(columnNameList) # REMOVE THIS AFTERWARDS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   try:
     table = "SELECT * FROM {}"
@@ -400,8 +399,6 @@ def createTable():
         filteredx = str(x)
         a = filteredx.replace("'", "").replace("(", "").replace(")", "").replace(",", "")
         tableList.append(a)
-
-      print(tableList)
       
   except:
       print("There are no valid databases. Please create a DB first")
@@ -409,16 +406,20 @@ def createTable():
   while True:
     print("Input the name of the table. Please use a unique name")
     newTN = input()
+    # newTN = newTN.lower()
 
     if newTN not in tableList:
-      print("Enter the number of columns you would like to have")
-
+      
       while True:
         try:
+          print("Enter the number of columns you would like to have")
           numColumns = int(input())
-          break
+          if(numColumns > 0):
+            break
+          else:
+            print("ERROR: The number you have added is invalid number value")
         except:
-          print("ERROR: Please try again and enter a number value")
+          print("ERROR: The number you have added is invalid number value")
           
       numColumns = (int)(numColumns)
       colNames = []
@@ -431,12 +432,11 @@ def createTable():
         temp = input()
         colNames.append(temp)
         if i == (numColumns - 1):
-          createTableScript += (colNames[i] + " VARCHAR(255))")
+          createTableScript += ("`" + colNames[i] + "` VARCHAR(255))")
         else:
-          createTableScript += (colNames[i] + " VARCHAR(255), ")  
-        
+          createTableScript += ("`" + colNames[i] + "` VARCHAR(255), ")  
+       
       try:
-        print(createTableScript.format(newTN))
         mycursor.execute(createTableScript.format(newTN))
         mydb.commit()
       except:
@@ -462,9 +462,9 @@ def dropTable(dbChosen, tableName):
         filteredx = str(x)
         a = filteredx.replace("'", "").replace("(", "").replace(")", "").replace(",", "")
         tableList.append(a)
-
-      print(tableList)
       
+      print("\n")
+
       if tableName in tableList:
         deleteTableScript = "DROP TABLE {}"
         mycursor.execute(deleteTableScript.format(tableName))
@@ -522,10 +522,7 @@ def delDB(dbName):
     print("Change committed")
     mydb.commit()
     print("Database has been removed")
-
     
-  
-
 #######################AARYA###########################OHM###################NOT#TIAGO####################SRIDHAR#####################################
 
 
@@ -564,7 +561,7 @@ while t:
         useDB = "USE {}"
         mycursor.execute(useDB.format(dbChosen))
       except:
-        print("ERROR: The database you entered does not exist, please enter a database that exists")
+        print("ERROR: The database you entered does not exist, please enter a database that exists\n")
         break
 
       # OPTIONS FOR ACCESSING / CREATING TABLE
@@ -584,10 +581,12 @@ while t:
         
         elif tableChoice == '2':
           # TO DO USER SHOULD BE ABLE TO CHOOSE 
+          showAllDBTables(dbChosen)
           createTable()
           tableLoop = False
           
         elif tableChoice == '3':
+          showAllDBTables(dbChosen)
           print("Enter the name of the table you would like to delete")
           tableName = input()
           dropTable(dbChosen, tableName)
@@ -618,6 +617,7 @@ while t:
       notFound = False
       for x in tableList:
         if x == dbTableName:
+          notFound = False
           break
         else:
           notFound = True
@@ -734,6 +734,7 @@ while t:
     while dbChoice == '2':
       print("Type 1 to create a database")
       print("Type 2 to delete a database")
+      print("Type 3 to return to main menu")
       dbAlter = input("Type here: ")
       ##
       if dbAlter == '1':
@@ -765,6 +766,9 @@ while t:
             dbChoice='0'
           elif userEnd=='2':
             exit()
+
+      elif dbAlter == '3':
+        dbChoice='0'
     ## Triggers boolean to exit main program loop if user chooses to exit program   
     while dbChoice == '3':
       exit()
